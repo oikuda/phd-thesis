@@ -1,0 +1,13 @@
+tex/*.aux
+tex/*.idx
+tex/*.log
+tex/*.toc
+tex/*.out
+tex/*.dvi
+tex/*.bbl
+tex/*.blg
+tex/*.synctex.gz
+tex/*.ilg
+tex/*.lof
+tex/*.nlo
+tex/*.nls

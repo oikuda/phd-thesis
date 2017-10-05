@@ -1,0 +1,635 @@
+\chapter{Protokol za sigurno dogovaranje kriptografskih algoritama}
+\label{ch:model}
+
+U ovom poglavlju opisan je novi protokol za sigurno dogovaranje
+kriptografskih algoritama neovisan o komunikacijskom sloju, u daljnjem tekstu
+ACAP (engl. \emph{Agile Cryptographic Agreement Protocol}). 
+Osnovni zahtjevi na dizajn protokola ACAP su sljedeći:
+\begin{itemize}
+    \item sigurna razmjena kriptografskih ključeva,
+    \item prilagodljivi dogovor kriptografskih algoritama,
+    \item jednostavna arhitektura koja omogućava formalnu verifikaciju,
+    \item neovisnost o komunikacijskom sloju i uređaju i
+    \item učinkovita komunikacija s malim brojem poruka.
+\end{itemize}
+
+Protokol služi za komunikaciju između dvije strane (klijenta i poslužitelja) i
+omogućava sigurno dogovaranje svih potrebnih preduvjeta kako bi se ostvarila buduća
+sigurna komunikacija između te dvije strane gdje je klijent strana koja
+započinje komunikaciju, a poslužitelj druga strana koja očekuje poruku za
+početak dogovora. Protokol ACAP omogućuje i dogovor u sklopu paradigme
+ravnopravnih čvorova gdje su svi čvorovi istovremeno klijenti i poslužitelji.
+
+Nakon uspješne razmjene poruka obje strane imaju pristup sljedećim
+podacima:
+\begin{itemize}
+    \item Tajnom ključu koji se generira iz zajedničke tajne koja se uspostavlja
+	korištenjem protokola Diffie-Hellman \cite{DH}
+	i omogućava uspostavljanje principa PFS (engl. \emph{Perfect Forward
+	Secrecy}) \cite{krawczyk2011perfect}. Princip PFS omogućava tajnost
+	razmjene podataka i u slučaju da se otkrije dugoročna zajednička tajna.
+    \item Javnim ključevima koji se koriste za autentifikaciju komunicirajućih
+	strana.
+    \item Popisu kriptografskih algoritama koji su podržani na obje
+	komunicirajuće strane te koji će se koristiti za ostvarivanje potrebnih
+	sigurnosnih zahtjeva.
+\end{itemize}
+
+Na početku potpoglavlja \ref{sec:oznac} dan je pregled označavanja za sve
+kriptografske operacije
+koje se koriste za opis protokola. Potom slijedi opis poruka i razmjene poruka s
+kojima se ostvaruje komunikacija u protokolu ACAP. Na kraju poglavlja
+analizira se sigurnost predloženog protokola i opisuju se sigurnosni mehanizmi
+koji su integrirani u protokol.
+
+Protokol ACAP temeljen je na principu \emph{sign-and-mac} (SIGMA) koji je
+opisan u poglavlju \ref{sec:sigma}. SIGMA kombinira razmjenu
+ključa korištenjem Diffie-Hellman algoritma, digitalni potpis i algoritam HMAC
+za zaštitu dogovora tako da
+onemogućuje napadača da uspostavi napad čovjek u sredini. Protokol JFK, koji
+je opisan u potpoglavlju \ref{sec:jfk}, također koristi princip SIGMA, što
+objašnjava sličnost prve dvije poruke protokola ACAP s ovim protokolom. Dogovor
+algoritama koji će se koristiti za osiguravanje komunikacije sličan je onom
+koji je definiran u transportnom dijelu protokola SSH.
+
+\section{Označavanje kriptografskih operacija}
+\label{sec:oznac}
+
+Za opis protokola koristi se standardni način označavanja kriptografskih
+operacija. Oznaka $X$
+predstavlja jednu stranu u komunikaciji, a oznaka $x$ predstavlja tajnu
+komponentu Diffie-Hellman razmjene na odgovarajućoj strani. Klijent se označava
+oznakom $I$ (od
+engl. \emph{initiator}, započinjatelj), a poslužitelj oznakom $R$ (od
+engl. \emph{responder}, odgovaratelj):
+
+{
+\renewcommand{\arraystretch}{1.40}
+\begin{tabular}{p{1.0cm} p{13.5cm}}
+$g^x	$ & javni dio Diffie-Hellman (DH) razmjene ključeva, uz specifikaciju DH
+	    grupe koja se želi koristiti za komunikaciju, \\
+
+$N_X	$ & jedinstvena privremena vrijednost (engl. \emph{nonce}) koja se koristi za
+	    jedan dogovor, \\
+
+$K	$ & ključ sjednice, rezultat je KDF operacije nad dijeljenom
+	    tajnom (dijeljena tajna se računa iz $(g^x, y)$ ili $(g^y, x)$,
+	    ovisno o komunikacijskoj strani, gdje su $x$ i $y$ tajni dijelovi
+	    DH razmjene) i \emph{nonce} vrijednosti obje strane,
+
+	    $K = KDF (g^{xy},N_I,N_R) $, \\
+
+$PK_X	$ & javni ključ (ili digitalni certifikat), \\
+
+$S_X\{\}$ & digitalni potpis s tajnim (privatnim) ključem koji se može
+	    provjeriti s odgovarajućim javnim ključem $PK_X$,\\
+
+$H_K\{\}$ & HMAC operacija uz korištenje ključa sjednice K, \\
+
+$L_X	$ & popis podržanih kriptografskih algoritama, podijeljen u kategorije, \\
+
+$L_{IR} $ & dogovoreni kriptografski algoritmi između klijenta ($I$) i poslužitelja ($R$)
+	    tijekom ACAP razmjene, \\
+
+$K_{IR} $ & tajni ključ koji je dogovoren između klijenta ($I$) i poslužitelja
+	    ($R$), \\
+
+$E_X	$ & poruka koja sadrži podatke o grešci koja se dogodila tijekom
+	    komunikacije (koristi se samo u porukama ABORT). \\
+\end{tabular}
+}
+
+\section{Poruke i tok komunikacije}
+\label{sec:poruke}
+
+Standardni tok komunikacije u protokolu ACAP prikazan je na
+slici~\ref{msc}. U njemu je prikazano računanje i distribucija svih parametara
+koji su potrebni za sigurnu komunikaciju.
+
+\input{msc}
+
+Protokol ACAP sastoji se od četiri osnovne poruke s pomoću kojih se izmjenjuju
+javni ključevi, dogovara zajednička tajna te kriptografski algoritmi koji će se
+koristiti za zaštitu daljnje komunikacije. 
+Oznake u zagradama korištene u opisu poruka protokola označuju smjer poruke ($I
+\rightarrow R$ označuje poruku koju klijent $I$ šalje poslužitelju $R$):
+
+\begin{tabular}{p{3.0cm} p{8.0cm}}
+    \initi($I \rightarrow R$): & $g^i, N_I$  \\
+    \initr($R \rightarrow I$): & $g^r, N_R, PK_R, S_R\{g^r\}$,
+    $H_K\{PK_R, N_I, N_R\}$ \\
+    \listi($I \rightarrow R$): & $PK_I, L_I, S_I\{L_I,g^i,g^r\}$,
+    $H_K\{PK_I, N_R, N_I\}$ \\
+    \listr($R \rightarrow I$): & $L_R, S_R\{L_R,g^i,g^r,N_I,N_R\}$ \\
+\end{tabular}
+\vspace{5pt}
+
+Klijent pokreće komunikaciju slanjem poruke \initi{}. Ona sadrži 
+javni dio Diffie-Hellman razmjene klijenta ($g^i$) uz specifikaciju DH
+grupe i klijentov
+\emph{nonce} $N_I$. Ako poslužitelj podržava predloženu grupu odgovara
+klijentu s porukom \initr{}.
+
+Poruka \initr{} sadrži javni dio DH razmjene poslužitelja $g^r$, javni ključ
+$PK_R$ poslužitelja i \emph{nonce} $N_R$. Poruka je zaštićena s pomoću digitalnog
+potpisa javnog dijela DH razmjene $S_R\{g^r\}$ i HMAC-a javnog ključa i obje
+privremene jedinstvene vrijednosti s ključem sjednice $K$ koji je uspostavljen
+kroz DH, $H_K\{PK_R, N_I, N_R\}$.
+
+\listi{} sadrži klijentov javni ključ $PK_I$ i popis podržanih
+algoritama $L_I$. Digitalni potpis u $S_I\{L_I,g^i,g^r\}$ štiti popis podržanih
+algoritama dok HMAC, koristeći ključ sjednice $K$, štiti klijentov javni ključ
+$H_K\{PK_I, N_R, N_I\}$. Zadnja poruka u razmjeni je \listr{}. U toj
+poruci prenosi se lista podržanih protokola poslužitelja $L_R$, koja je
+zaštićena s digitalnim potpisom $S_R\{g^i,g^r,N_I,N_R,L_R\}$.
+
+Nakon razmjene, klijent i poslužitelj imaju pristup popisu dogovorenih
+algoritama $L_{IR}$, međusobnim javnim ključevima i zajedničkoj tajni $K_{IR}$
+(poznatoj samo klijentu i poslužitelju).
+
+\subsection{Rukovanje iznimkama}
+
+Tijekom komunikacije moguće su iznimke koje će prouzročiti prekid izmjena
+poruka. To je moguće u sljedećim slučajevima:
+\begin{itemize}
+\item različite Diffie-Hellman grupe u početnoj razmjeni,
+\item pogrešan zaštitni sažetak HMAC,
+\item pogrešan digitalni potpis ili
+\item nepostojanje zajedničkih algoritama za korištenje kod klijenta i
+poslužitelja.
+\end{itemize}
+
+U svrhu rukovanja iznimkama definiramo poruke ABORT koje su različite za
+klijenta i poslužitelja:
+
+\begin{tabular}{p{3.4cm} p{8.0cm}}
+    \abortr($R \rightarrow I$): & $E_R, N_I, PK_R, S_R\{N_I, E_R\}$ \\
+    \aborti($I \rightarrow R$): & $E_I, N_R, PK_I, S_I\{N_R, E_I\}$ \\
+\end{tabular}
+\vspace{5pt}
+
+ABORT poruke sadrže kratak opis greške, odgovarajući \emph{nonce}, javni
+ključ te digitalni potpis \emph{noncea} i opisa greške.
+
+\section{Kriptografski algoritmi i ključevi za dogovaranje}
+
+Kako bi komunicirajuće strane mogle na siguran način dogovoriti kriptografske
+algoritme i ključeve potrebne za zaštitu komunikacije, obje strane u
+komunikaciji moraju podržavati nekoliko osnovnih vrsta kriptografskih algoritama
+za provedbu dogovora:
+\begin{itemize}
+    \item postupak razmjene ključeva Diffie-Hellman za dobivanje zajedničke
+	tajne $g^{ir}$,
+    \item operacija KDF za izračunavanje ključa sjednice $K$ i tajne za zaštitu
+	naknadne komunikacije $K_{IR}$ iz zajedničke tajne dobivene DH postupkom
+	i \emph{nonceva} $N_I$ i $N_R$,
+    \item funkcija kriptografskog sažetka za izračun HMAC operacija s
+	ključem sjednice $K$ i
+    \item asimetrični algoritam za izračun i provjeru digitalnih potpisa tijekom
+	dogovora.
+\end{itemize}
+
+Da bi se ostvario dogovor više različitih vrsta asimetričnih algoritama za zaštitu
+komunikacije nužno je razmijeniti javne ključeve za sve podržane
+asimetrične algoritme i na kraju odabrati ključ koji odgovara dogovorenom
+asimetričnom algoritmu.
+
+Za zaštitu komunikacije u prototipu protokola koriste se sljedeći algoritmi:
+Diffie-Hellman 1024 MODP grupa \cite{rfc5114}, KDF operacija zasnovana na HMAC
+inačici SHA-256 funkcije kriptografskog sažetka (HKDF \cite{rfc5869}), SHA-256
+kriptografski sažetak za HMAC operacije i RSA-1536 kao asimetrični algoritam za
+digitalne potpise. Uz te algoritme može se koristiti Diffie-Hellman
+algoritam zasnovan na eliptičnim krivuljama, kao i ECDSA algoritam za digitalni
+potpis (oba algoritma koriste ključeve veličine 256 bita).
+
+\section{Dogovor kriptografskih algoritama}
+\label{sec:dogovor}
+
+Popisi podržanih kriptografskih algoritma podijeljeni su u kategorije. Te
+kategorije se mogu definirati prema trenutnim potrebama zaštite. Za zapis
+popisa koristi se format JSON~\cite{rfc4627}.
+Na slici~\ref{fig:alg_list} vidi se primjer s više različitih kategorija i
+skupova kriptografskih algoritama.
+\begin{figure}[htb]
+\begin{small}
+\begin{verbatim}
+{
+    "hash":["SHA-256", "RIPEMD", "SHA-1", "MD5"],
+    "secret_key":["AES-CTR_256", "AES-CBC_128", "3DES_192"],
+    "public_key":["ECDSA_192", "DSA_2048", "RSA_2048"],
+    "cryptographic_suite":[
+      "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+      "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
+      "TLS_RSA_WITH_RC4_128_SHA" ]
+}
+\end{verbatim}
+\end{small}
+\vspace{-15pt}
+\caption{Popisi kriptografskih algoritama i skupova koji se dogovaraju}
+\label{fig:alg_list}
+\end{figure}
+
+
+Za dogovor kriptografskih algoritama u programskom ostvarenju koriste se principi iz
+protokola SSH \cite{rfc4253}. Ovisno o
+namjeni i okruženju u kojem se koristi protokol, moguće je definirati drukčije
+algoritme dogovora koji će uzimati dodatne parametre prilikom odluke.
+Prilagodba algoritma za dogovor za korištenje u okolini Interneta Stvari
+prikazana je u poglavlju \ref{ch:iot}.
+
+Kriptografski algoritmi odabiru se zasebno za svaku vrstu
+algoritma: sažetak (\texttt{hash}), kriptografija tajnog ključa
+(\texttt{secret\_key}), kriptografija javnog ključa (\texttt{public\_key}) ili
+korištenjem skupa kriptografskih algoritama (\texttt{cryptographic suite}). Uz
+to, moguć je i dogovor drugih parametara sigurne komunikacije, kao što je način
+generiranja tajnih ključeva iz dobivene zajedničke tajne.
+U popisu algoritama za kriptografiju javnog i tajnog ključa zadnji dio u imenu
+algoritma predstavlja duljinu ključa koji je podržan, npr.
+\texttt{AES-CTR\_256} predstavlja algoritam AES koji koristi CTR način
+ulančavanja blokova s tajnim ključem duljine 256 bita.
+
+Odabire se prvi algoritam s popisa klijenta koji se ujedno nalazi na popisu
+poslužitelja. Primjer dogovora algoritama između klijenta i poslužitelja
+prikazan je slikom \ref{fig:neg_lists}. Preduvjet je da svi algoritmi budu
+poredani prema sigurnosti algoritma i duljini ključa. Algoritmi mogu biti poredani
+i prema zahtjevnosti izračunavanja ukoliko se radi o okruženju s ograničenim
+računalnim resursima. Prošireni model dogovora kriptografskih algoritama
+za okolinu Interneta stvari prikazan je u poglavlju \ref{sec:iotprilag}.
+
+\begin{figure}
+\begin{subfigure}{0.33\linewidth}
+\begin{framed}
+\begin{small}
+\begin{verbatim}
+"hash":[
+    "SHA-256",
+    "RIPEMD",
+    "SHA-1"],
+"secret_key":[
+    "AES-CTR_256",
+    "AES-CBC_128",
+    "3DES_192"],
+"public_key":[
+    "RSA_1024",
+    "RSA_2048",
+    "ECDSA_192"]
+\end{verbatim}
+\vspace{-15pt}
+\end{small}
+\end{framed}
+\vspace{-10pt}
+\caption{Popis algoritama klijenta}
+\end{subfigure}
+\begin{subfigure}{0.32\linewidth}
+\begin{framed}
+\begin{small}
+\begin{verbatim}
+"hash":[
+    "SHA3-512",
+    "SHA-512",
+    "SHA-256"],
+"secret_key":[
+    "AES-CTR_256",
+    "Salsa20_256",
+    "AES-CBC_128"],
+"public_key":[
+    "ECDSA_224",
+    "ECDSA_192",
+    "RSA_2048"]
+\end{verbatim}
+\vspace{-15pt}
+\end{small}
+\end{framed}
+\vspace{-10pt}
+\caption{Popis algoritama poslužitelja}
+\end{subfigure}
+\begin{subfigure}{0.33\linewidth}
+\begin{framed}
+\begin{small}
+\begin{verbatim}
+"hash":
+    "SHA-256",
+
+
+"secret_key":
+    "AES-CTR_256",
+
+
+"public_key":
+    "RSA_2048"
+
+
+\end{verbatim}
+\vspace{-15pt}
+\end{small}
+\end{framed}
+\vspace{-10pt}
+\caption{Dogovoreni popis algoritama}
+\end{subfigure}
+\caption{Primjer ponuđenih i dogovorenih algoritama}
+\label{fig:neg_lists}
+\end{figure}
+
+Popisi preporuka za korištenje određenih algoritama redovito se izdaju od strane
+savjetodavnih agencija za pojedine države i zajednice. Te se preporuke mogu
+pronaći na web sjedištu tvrtke BlueKrypt~\footnote{BlueKrypt -- Keylength --
+Cryptographic Key Length Recommendation -- \url{http://www.keylength.com/en/}}.
+
+Protokol ACAP ne podržava mogućnost ponovne razmjene popisa
+podržanih algoritama, već je potrebno ponoviti cijeli postupak dogovora kako bi
+se algoritmi i ključevi osvježili i prilagodili trenutnom stanju komunicirajućih
+strana. Nakon uspješnog dogovora ključeva i algoritama, aplikacija
+koja se koristi protokolom definira trajanje dogovorenih parametara.
+Preporučeni interval dogovora parametara je jedan sat, što je uobičajena
+vrijednost trajanja IPsec \emph{Security Association} dogovora
+\footnote{Trenutno strongSwan IPsec rješenje koristi preporučeni interval
+od jednog sata: \\
+\url{https://wiki.strongswan.org/projects/strongswan/wiki/ExpiryRekey}, dok je to kod
+Cisco opreme interval od 24 sata:
+\url{http://www.cisco.com/c/en/us/td/docs/security/asa/asa95/configuration/vpn/asa-95-vpn-config.pdf}}.
+Taj interval može se prilagoditi ovisno o okruženju u kojem se koristi
+protokol ACAP.
+
+\section{Analiza sigurnosti i mehanizama protokola ACAP}
+\label{sec:sigurnost}
+
+Cilj protokola ACAP je omogućavanje jednostavne integracije i formalne
+verifikacije kako bi se mogla jamčiti sigurna komunikacija. Zbog toga je
+donekle ograničena količina funkcionalnosti kako bi se smanjila vjerojatnost
+pojavljivanja napada na protokol i njegovo programsko ostvarenje.
+Jedna od namjerno izostavljenih
+funkcionalnosti je podrška za ponovno dogovaranje koje se nastavlja na
+prethodni dogovor.  Jedino što se pamti od početnog dogovora su javni ključevi
+obje komunicirajuće strane.
+
+Poruke u protokolu sadrže samo podatke koji su nužni da bi se zaštitio dogovor
+algoritama i ključeva. Kako bi se spriječili napadi ponavljanjem poruka, u svaku
+poruku su uključene \emph{nonce} vrijednosti i javni dijelovi DH
+razmjene. U porukama gdje nisu eksplicitno uključene one se koriste za izračun
+digitalnih potpisa i HMAC sažetaka.
+
+Princip SIGMA \cite{Krawczyk2003sigma} koristi se za sprječavanje napada
+čovjek u sredini jer implicitno povezuje ključ sjednice $K$ (koji je dobiven
+iz zajedničke tajne uspostavljene kroz DH razmjenu korištenjem funkcije KDF) s
+javnim ključevima komunicirajućih strana $PK_I$ i $PK_R$.
+
+Pregled sigurnosnih mehanizama i razine na kojoj se ostvaruju prikazana je u
+tablici \ref{tab:zahtjevi}. Sigurnosni mehanizmi ostvareni na razini
+programskog ostvarenja dodatno su objašnjeni u poglavlju \ref{ch:impl}.
+
+\begin{table*}[hbt]
+\caption{Pregled sigurnosnih mehanizama protokola ACAP}
+\renewcommand{\arraystretch}{1.3}
+\label{tab:zahtjevi}
+\centering
+\small
+\begin{tabular}{p{6.4cm} p{3.0cm} p{5.0cm} }
+\hline
+Sigurnosni mehanizam
+    & Razina rješenja
+    & Način ostvarivanja
+    \\ \hline \hline
+Djelomični nedostatak dogovora\newline algoritma u ACAP razmjeni
+    & dizajn protokola
+    & mali utjecaj i mogućnost\newline dvostrukog dogovora
+    \\ \hline
+Računalna neovisnost tajnih ključeva
+    & ostvarenje
+    & ugrađen mehanizam za neovisno izračunavanje ključeva
+    \\ \hline
+Smanjenje utjecaja DoS napada
+    & ostvarenje
+    & najzahtjevniji izračuni odvojeni u pozadinski proces
+    \\ \hline
+Uspostavljanje povjerenja\newline komunicirajućih strana
+    & dizajn protokola
+    & na razini postojećih rješenja
+    \\ \hline
+Sprječavanje napada čovjek u sredini
+    & dizajn protokola
+    & verificirano u sklopu\newline formalne verifikacije
+    \\ \hline
+Sprječavanje napada ponavljanjem\newline poruka
+    & dizajn protokola\newline i ostvarenje
+    & verificirano u sklopu\newline formalne verifikacije
+    \\ \hline
+\end{tabular}
+\end{table*}
+
+\subsection{Djelomični nedostatak dogovora algoritama u ACAP razmjeni}
+Cjelokupna razmjena sastoji se od samo četiri poruke te se uvijek radi sa svježim
+\emph{nonce} vrijednostima. U slučaju da jedan od kriptografskih algoritama
+koji se koristi
+za razmjenu postane ranjiv, zbog malog broja poruka ne bi bilo moguće
+ozbiljno ugroziti razmjenu u sklopu protokola ACAP. Zbog toga se na početku
+razmjene izmjenjuje isključivo informacija o Diffie-Hellman grupi kako bi se
+osiguralo dogovaranje s trenutno najboljim DH parametrima i dobila zajednička
+tajna dovoljne veličine. Trenutno programsko ostvarenje protokola ACAP koristi
+najnovije sigurne kriptografske algoritme, kao što su SHA-256
+sažetak za HMAC izračune i kriptografija temeljena na eliptičnim krivuljama za
+algoritme asimetričnog kriptosustava (DH i digitalno potpisivanje). Važno je
+napomenuti da bi uvođenje jednostavnog načina dogovora algoritama za početni
+dogovor zahtijevalo još barem jednu poruku na početku komunikacije i
+omogućilo više točaka napada. U tom slučaju napadač bi mogao utjecati na razinu
+sigurnosti tako da se koristi najslabiji trenutno podržani kriptografski
+algoritam. Najbolji način izvedbe dogovora algoritma za provedbu protokola ACAP
+je dvostruko korištenje protokola: jednom za dogovor algoritama za razmjenu, a
+potom dogovor s novim algoritmima za konačni rezultat.
+
+\subsection{Računalna neovisnost tajnih ključeva}
+\label{sec:keys}
+Ključni dio principa SIGMA leži u
+računalnoj neovisnosti zajedničkih tajni koje se koriste za razmjene poruka. To
+se odnosi na ključ sjednice $K$ i tajni ključ koji je rezultat cjelokupne
+razmjene. Oba ključa izračunavaju se iz iste zajedničke tajne, uz uvjet da jedan
+ključ ne otkriva nikakve podatke o drugom ključu, kako je opisano u
+dodatku članka \cite{Krawczyk2003sigma}. Nakon što se završi razmjena protokola
+ACAP, komunicirajuće strane dobivaju tajni ključ odgovarajuće duljine
+za odabrani algoritam šifriranja  tijekom dogovora koji je računalno neovisan od
+tajne koja je dogovorena putem protokola Diffie-Hellman. Kod programskog
+ostvarenja protokola važno je da je zajednička tajna
+dostupna samo u radnoj memoriji za vrijeme izvođenja dogovora i briše se odmah
+nakon
+razmjene kako bi se spriječilo otkrivanje podataka o tajni. U protokolu ACAP
+računalna neovisnost izvedena je pravilnim korištenjem funkcije KDF za
+dobivanjem računalno neovisnih ključeva.
+
+\subsection{Smanjenje utjecaja DoS napada}
+\label{sec:dos}
+Napadi uskraćivanja usluge (engl.
+\emph{Denial of Service, DoS attacks}) imaju za cilj iscrpiti resurse koji su na
+raspolaganju određenoj usluzi kako bi se onemogućio pristup toj usluzi, što se
+najčešće postiže slanjem velikog broja poruka na određenu uslugu.
+
+Da bi 
+poslužitelj stvorio poruku \initr{}, kao odgovor na poruku \initi{}, mora
+odraditi
+vremenski zahtjevnu operaciju generiranja nasumičnog broja pogodnog za
+Diffie-Hellman razmjenu zajedno s izračunom ključa sjednice $K$ te izračunom
+digitalnog potpisa i HMAC sažetka. To je računalno najzahtjevnija operacija
+cjelokupne razmjene i predstavlja moguću točku napada na protokol.
+Napadač bi mogao proizvesti ogromnu količinu lažnih \initi{} poruka koje bi
+uzrokovale nedostatak resursa na strani poslužitelja.
+Utjecaj takvog napada smanjuje se korištenjem Diffie-Hellman tajne tijekom
+kratkog vremenskog perioda i prethodnim izračunom računalno zahtjevnijeg dijela
+\initr{} poruke ($g^r, S_R\{g^r\}$). Generiranje zahtjevnijeg dijela poruke u
+tom se slučaju obavlja kao pozadinska procedura u sklopu ACAP poslužitelja. Stoga
+su jedine operacije koje poslužitelj mora
+odraditi prilikom primitka poruke \initr{} izračun ključa sjednice
+$K$ i izračun HMAC sažetka s tim ključem ($H_K\{PK_R, N_I, N_R\}$). Sličan
+mehanizam koristi se u protokolu JFK \cite{aiello2004jfk}.
+
+\no{
+\begin{figure}[ht]
+\setlength{\instdist}{4cm}
+\begin{centering}
+    \begin{msc}[c]{Razmjena \initi{} i \initr{} poruka}
+\declinst{c}{}{Klijent (I)}
+\declinst{s}{}{Poslužitelj (R)}
+
+\mess{gen $g^r, N_R, S_R(g^{r})$}{s}{s}
+
+\action*{generiranje $g^i,N_I$}{c}
+\nextlevel[4]
+
+\mess{$g^i, N_I$}{c}{s}
+\nextlevel[1]
+
+\action*{$K=KDF(g^{ir},N_I,N_R)$}{s}
+\nextlevel[4]
+
+\mess{$\mathbf{g^r}, \mathbf{N_R}, PK_R, \mathbf{S_R(g^r)}, H_K\{...\}$}{s}{c}
+
+\end{msc}
+\caption{Smanjenje utjecaja DoS napada}
+\label{msc_dos}
+\end{centering}
+\end{figure}
+}
+
+\subsection{Uspostavljanje povjerenja između komunicirajućih strana}
+Uspostavljanje povjerenja (engl. \emph{trust establishment}) između dvije
+komunicirajuće strane predstavlja mogućnost da se na određeni način provjeri da
+svakoj od komunicirajućih strana pripada adresa s pomoću koje komunicira. To
+se u sklopu suvremenih računalnih sustava ostvaruje s pomoću infrastrukture
+javnog ključa (engl. \emph{Public Key Infrastructure}, PKI) ili ranijom
+distribucijom identifikacijskih podataka. Na taj se način stvara početno
+povjerenje (engl. \emph{root of trust}) na kojem se temelji sva buduća
+komunikacija.
+
+Protokol ACAP
+ne postavlja ograničenja na razmjenu identifikacijskih podataka. Mogu se
+razmjenjivati samostalni javni ključevi kao i digitalno potpisani javni ključevi
+u obliku certifikata. To ne zahtijeva nikakvu promjenu u porukama \initr{} i
+\listi{}. U slučaju korištenja digitalno potpisanih certifikata aplikacija koja
+koristi ACAP mogla bi provjeravati valjanost certifikata kako bi se osiguralo
+povjerenje između komunicirajućih strana. To omogućava jednaku razinu sigurnosti
+kao u protokolima SSL/TLS i IPsec te zahtijeva istu infrastrukturu javnog
+ključa koja se trenutno koristi za
+osiguravanje povjerenja. Ako se ne koristi PKI, onda je potrebno
+odraditi prvu razmjenu protokola u kontroliranim uvjetima kako bi se zapamtili
+javni ključevi i ostvarilo početno povjerenje između komunicirajućih strana. Uz
+to, javne ključeve je moguće distribuirati drugim kanalom prije početne
+razmjene.
+
+\subsection{Sprječavanje napada čovjek u sredini}
+U scenariju napada čovjek u
+sredini napadač se klijentu u komunikaciji predstavlja kao poslužitelj i
+obratno. Pretpostavka protokola ACAP je da se dogovoreni tajni ključ i algoritmi
+vežu s javnim ključevima s kojima su ti parametri dogovoreni. Cilj je
+onemogućiti napadača da se predstavlja kao vlasnik klijentskog odnosno
+poslužiteljskog privatnog ključa, što izravno onemogućuje napadača da utječe na
+dogovorene kriptografske algoritme i zajedničku tajnu u slučaju prethodno
+uspostavljenog početnog povjerenja.
+
+Pretpostavimo da
+napadač pokuša promijeniti poruke u razmjeni kako bi došao do tajnog ključa koji
+će dvije strane koristiti za komuniciranje. Ako napadač promijeni poruku \initi{}
+($g^i,N_I$) tako da uvede drukčiji DH nasumični broj (npr. $i'$ i
+izračunati $g^{i'}$),
+mogao bi također izračunati povratnu \initr{} poruku korištenjem drugog para
+privatnog i javnog ključa. Uz to bi morao generirati još jedan DH nasumični broj
+(npr. $r'$ i izračunati $g^{r'}$) i tada bi poruka \initr{} 
+bila oblika ($g^{r'}, N_R, PK_{R'}, S_{R'}\{g^{r'}\},
+H_{K'}\{PK_{R'}, N_I, N_R\}$). To bi isto tako vodilo i do promjene ključa
+sjednice $K$ u ključ $K'$. Sva naknadna komunikacija nakon te dvije početne
+poruke bila bi neuspješna zbog provjere HMAC sažetaka i komunicirajuće strane ne
+bi mogle provesti dogovor niti povezati javne ključeve s dogovorenim
+kriptografskim algoritmima i promijenjenom zajedničkom tajnom. Dodatno,
+otpornost na napade čovjek u sredini dokazana je postupkom formalne
+verifikacije koji je prikazan u poglavlju \ref{sec:verif}.
+
+\subsection{Sprječavanje napada ponavljanjem poruka}
+\label{sec:replay}
+U slučaju sprječavanja napada ponavljanjem poruka cilj napadača
+je u jednom trenutku spremiti cjelokupnu razmjenu poruka u dogovoru i kasnije
+odraditi identičnu razmjenu poruka kako bi komunicirajuće strane koristile
+stariji ključ i kriptografske algoritme. Ovakav napad bi omogućio da se svaki
+dogovor poništi tako da se ponovi stariji spremljeni dogovor.
+
+U trenutku kad napadač šalje prethodno zabilježenu poruku, poslužitelj ima novu
+vrijednost \emph{noncea} $N_R$. To znači da bi nova vrijednost trebala biti
+korištena za izračun HMAC sažetka ($H_K\{PK_I, N_R, N_I\}$) koji je sadržan u
+poruci \listi{}. To nije moguće odraditi u pasivnom scenariju slanja prethodno
+zabilježenih poruka. U slučaju aktivnog napada napadač bi trebao biti u
+mogućnosti promijeniti zabilježene poruke, što je onemogućeno promjenom
+Diffie-Hellman vrijednosti za kasnije razmjene. Shodno tome sve provjere HMAC
+sažetaka bile bi negativne.
+
+\section{Usporedba protokola ACAP s protokolom za upravljanje prijenosom
+podataka u protokolu SSH}
+
+Za dogovor algoritama i ključeva u protokolu za upravljanjem prijenosom podataka
+protokola SSH potrebno je šest poruka.
+Prve dvije poruke (KEXINIT\textsubscript{C} i
+KEXINIT\textsubscript{S}) služe za razmjenu i dogovor algoritama koji će se
+koristiti za dogovor ključeva. Dogovaraju se algoritmi za Diffie-Hellman (DH)
+razmjenu, algoritmi simetričnog kriptosustava i algoritmi za stvaranje zaštitnog
+sažetka HMAC. Nakon dogovora algoritma razmjenjuju se poruke za dogovor
+DH zajedničke tajne (KEXDH\_INIT i KEXDH\_REPLY). Poruka KEXDH\_REPLY također
+sadrži javni ključ poslužitelja i digitalni potpis razmjene s kojim se
+provjerava vjerodostojnost dosadašnje razmjene. Na kraju se razmjenjuju
+poruke za dogovor novih ključeva (NEWKEYS\textsubscript{C} i
+NEWKEYS\textsubscript{S}) nakon kojih su uspostavljeni novi ključevi za zaštitu
+komunikacije. Cjelokupna razmjena poruka prikazana je na slici \ref{msc_ssh}.
+Razmjenu je moguće skratiti na pet poruka tako da se poruka
+NEWKEYS\textsubscript{S} šalje zajedno s porukom KEXDH\_REPLY.
+
+
+Protokol za upravljanje prijenosom podataka unutar SSH mogao bi se iskoristiti
+za uslugu koju pruža protokol ACAP (dogovor kriptografskih algoritama i
+ključeva), ali
+pritom je važno uzeti u obzir razlike između ta dva protokola. Razlike protokola
+za upravljanje prijenosom podataka u odnosu na protokol ACAP su sljedeće:
+\begin{itemize}
+    \item veći broj poruka u razmjeni,
+    \item razmjena javnog ključa samo za poslužitelj,
+    \item manji broj poruka s digitalnim potpisom,
+    \item kasnije otkrivanje promjene poruka za dogovor algoritama i
+    \item nemogućnost smanjivanja opterećenosti poslužitelja prilikom
+	generiranja digitalnog potpisa razmjene.
+\end{itemize}
+
+\input{msc_ssh}
+
+Kada bi se principi iz protokola za upravljanje prijenosom podataka primijenili
+za uslugu koju pruža protokol ACAP tada bi za potpunu razmjenu trebala barem
+jedna poruka više. Dodatni problem je što komunicirajuće strane nisu ravnopravne
+već se razmjenjuje samo javni ključ poslužitelja i ne postoji autentifikacija
+klijenta u sklopu protokola za upravljanje prijenosom podataka. Autentifikacija
+klijenta se odrađuje u sklopu protokola za autentifikaciju korisnika protokola
+SSH. Kako se digitalni potpis koristi samo kod slanja digitalnog potpisa
+razmjene složenost kriptografskih operacija tijekom razmjene je niža nego kod
+protokola ACAP, ali isto tako nije moguće autentificirati klijenta.
+
+U slučaju napada čovjek u sredini promjenu početnih poruka KEXINIT bit će moguće
+otkriti tek nakon primitka KEXDH\_REPLY poruke koja sadrži digitalni potpis
+razmjene. U sklopu protokola ACAP promjenu poruke u razmjeni moguće je
+prepoznati prije jer su sve poruke osim prve zaštićene zaštitnom sumom HMAC ili
+digitalnim potpisom.  Konačno digitalni potpis razmjene sadrži podatke koje je
+poslao klijent, te ga je potrebno generirati u trenutku kad poslužitelj primi i
+poruku KEXINIT\textsubscript{C} i KEXDH\_INIT. 
+Zbog toga je protokol SSH osjetljiviji na napad uskraćivanja usluge u odnosu na
+ACAP.
+
+% vim: spell spelllang=hr

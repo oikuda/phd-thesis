@@ -1,0 +1,631 @@
+\chapter{Kriptografija}
+\label{ch:crypto}
+
+Kriptografija je znanost koja omogućava sigurnu komunikaciju. Način ostvarivanja
+sigurne komunikacije ovisi o sigurnosnim zahtjevima koje komunikacija mora
+zadovoljavati. Sigurnosni zahtjevi osiguravaju se korištenjem kriptografskih
+algoritama koji određene matematičke principe primjenjuju za ostvarivanje tih
+zahtjeva. Kriptografija omogućava ostvarivanje sljedećih sigurnosnih zahtjeva:
+tajnosti, cjelovitosti, autentifikacije i neporecivosti.
+
+Tajnost predstavlja komunikaciju koja je poznata samo sudionicima komunikacije.
+Cjelovitost osigurava da su podaci nepromijenjeni prilikom prijenosa.
+Autentifikacija predstavlja mogućnost dokazivanja identiteta tijekom
+komunikacije. Neporecivost daje mogućnost dokaza da je jedan od sudionika obavio
+određenu radnju.
+
+\section{Kriptografski algoritmi}
+
+Kriptografske algoritme možemo podijeliti u tri osnovne skupine:
+\begin{itemize}
+\item algoritmi za stvaranje kriptografskih sažetaka (engl. \emph{cryptographic hash}),
+\item algoritmi simetričnog kriptosustava (engl. \emph{symmetric cryptosystem}) i
+\item algoritmi asimetričnog kriptosustava (engl. \emph{asymmetric
+    cryptosystem}).
+\end{itemize}
+
+U nastavku slijede kratki opisi navedenih vrsta kriptografskih algoritama
+uključujući i njihovu primjenu u osiguravanju sigurnosnih zahtjeva.
+
+\section{Kriptografski sažetak}
+
+Funkcija za stvaranje kriptografskog sažetka jednosmjerna je funkcija koja
+sažima niz podataka
+proizvoljne veličine u niz podataka točno određene veličine. Kriptografski
+sažetak najčešće se koristi za provjeru cjelovitosti podataka.
+Da bi se funkcija $h$ smatrala jednosmjernim kriptografskim sažetkom (engl.
+\emph{one-way hash function}), treba zadovoljavati sljedeća svojstva \cite[str.
+544]{van2011encyclopedia}:
+\begin{enumerate}
+\item Argument $X$ može biti proizvoljne duljine, a rezultat $h(X)$ je fiksne
+duljine od $n$ okteta. Izračunavanje sažetka se uobičajeno zapisuje:
+$$h(X) = Y;\ \mathit{duljina}(Y) = n$$
+\item Funkcija sažetka $h$ mora biti jednosmjerna na način da je za ponuđeni
+$Y$,
+računalno neisplativo tražiti poruku $X$ za koju vrijedi $h(X)=Y$ (engl.
+\emph{preimage resistant}).
+\item Također, za danu poruku $X$ i $h(X)$ mora biti
+računalno neisplativo tražiti $X' \neq X$ takav da je $h(X') = h(X)$ (engl.
+\emph{second preimage resistant}).
+\item Poželjno svojstvo jednosmjernih funkcija sažetaka je otpornost na
+podudaranje (engl. \emph{collision resistant}), odnosno da je računalno
+teško (i neisplativo) pronaći bilo koje dvije različite poruke koje daju isti
+sažetak.
+\end{enumerate}
+
+Kriptografski sažetak se koristi za razne primjene: brzo uspoređivanje datoteka,
+adresiranje podataka u programiranju, spremanje podataka za autentifikaciju
+korisnika i provjeru cjelovitosti. Ako se provjera cjelovitosti koristi prilikom
+komunikacije, kriptografski sažetak se mora dodatno zaštititi
+kako ga napadač ne bi mogao promijeniti.
+Dodatna zaštita osigurava se korištenjem asimetrične kriptografije, a rezultat
+je digitalni potpis.
+
+Sigurna provjera cjelovitosti može se obaviti i isključivo korištenjem
+kriptografskog sažetka ako komunicirajuće strane imaju na raspolaganju
+dijeljenu zajedničku tajnu. Zajednička tajna se tada uključuje u izračun
+sažetka kako napadač ne bi mogao promijeniti poruku i izračunati novi sažetak za
+provjeru cjelovitosti i autentičnosti poruke. Ova metoda izračunavanja naziva se
+izračun zaštitne sume korištenjem algoritama kriptografskog sažetka (engl.
+\emph{Hashed Message Authentication Code} - HMAC) i pobliže je opisana u
+potpoglavlju \ref{ssec:HMAC}.
+
+Postoji velika količina algoritama za kriptografski sažetak, ali se
+za osiguravanje komunikacije najviše koriste MD5 (engl. \emph{Message Digest}) i
+SHA (engl. \emph{Secure Hash Algorithm}) algoritmi.
+Ako algoritam sažetka nije ranjiv na kriptografske napade, duljina
+sažetka dodatno povećava sigurnost algoritma jer povećava prostor mogućih
+vrijednosti
+sažetka i smanjuje mogućnost podudaranja sažetaka. Duljine navedenih sažetaka
+mogu biti sljedeće:
+\begin{itemize}
+\item MD5 - 128 bita,
+\item SHA1 - 160 bita,
+\item SHA2/SHA3 - 224, 256, 384 ili 512 bita.
+\end{itemize}
+
+\subsection{HMAC}
+\label{ssec:HMAC}
+
+HMAC (\emph{Hashed Message Authentication Code}) je poseban slučaj algoritma MAC
+(\emph{Message Authentication Code}) koji služi za izračun podatka za
+autentifikaciju poruka u komunikaciji korištenjem kriptografskog sažetka.
+Algoritam MAC iz poruke $X$ i ključa $K$ računa autentifikacijski kod $A$:
+$$MAC_K(X)=A$$
+Za generiranje takvog podatka mogu se koristiti različite metode, ali najbolji
+rezultati u praksi se postižu korištenjem kriptografskih funkcija
+\cite[str. 746]{van2011encyclopedia}.
+\nomenclature{MAC}{\emph{Message Authentication Code}}
+\nomenclature{HMAC}{\emph{Hashed Message Authentication Code}}
+
+Postupak kreiranja rezultata HMAC s ključem $K$ je za poruku $X$
+definiran je sljedećim izrazom \cite[str. 559]{van2011encyclopedia}:
+$$HMAC_K(X)=h(\ (K \oplus opad)\ ||\ h( (K \oplus ipad) || X )\ )$$
+Konstante $opad$ i
+$ipad$ su nizovi okteta duljine ključa $K$, znak $||$ predstavlja operaciju
+konkatenacije nizova, a $\oplus$ operaciju isključivo ili (XOR). $opad$ je niz
+okteta sadržaja \texttt{0x36}, dok je $ipad$ niz okteta sadržaja \texttt{0x5C}.
+Algoritam HMAC može koristiti bilo koji algoritam za stvaranje kriptografskog
+sažetka prilikom izračuna rezultata.
+
+S obzirom na to da HMAC koristi jedan ključ za sve poruke koje se razmjenjuju u
+komunikaciji, njegovim korištenjem ne osigurava se neporecivost poruke, ali HMAC
+predstavlja vrlo brz način izračunavanja podataka za provjeru cjelovitosti
+poruke i autentifikaciju
+pošiljatelja, zato što je stvaratelj poruke $X$ i $HMAC_K(X)$ morao biti upoznat
+s ključem $K$.
+
+Kako bi se određeni ključ $K$ mogao koristiti za HMAC operacije on mora biti
+jednak duljini rezultata algoritma za izračunavanje sažetka. Primjerice, ako se
+koristi algoritam MD5 tajni ključ mora biti duljine barem 128 bita, a ako se
+koristi algoritam SHA-256 tada bi ključ trebao biti duljine barem 256 bita.  
+
+\section{Simetrični kriptosustav}
+Simetrični kriptosustav označava sustav u kojem mora postojati jedan ključ s
+kojim se odvijaju operacije u sustavu. Ključ koji se
+koristi za izvođenje operacija je zajednička tajna između komunicirajućih
+strana. Simetrični kriptosustav za razliku od kriptografskog sažetka mora imati
+ključ, dok se kriptografski sažetak može računati bez ključa ili s ključem u
+slučaju HMAC-a.
+
+Cilj simetričnog kriptosustava je osiguravanje tajnosti komunikacije,
+stoga su definirane dvije osnovne operacije u sustavu: šifriranje podataka u
+šifrat i dešifriranje šifrata u izvorne podatke. Operacije šifriranja poruke $X$
+u šifrat $Y$ i dešifriranja šifrata u poruku korištenjem ključa $K$ definirane su
+sljedećim izrazima:
+$$E_K(X)=Y;\ D_K(Y)=X$$
+
+Simetrični kriptosustavi dijele se u dvije osnovne skupine s obzirom na način
+obrade podataka. Postoje algoritmi koji šifriraju tokove podataka  (engl.
+\emph{stream ciphers}) i algoritmi koji šifriraju blokove podataka (engl.
+\emph{block ciphers}).
+
+\subsection{Šifriranje tokova podataka}
+Kod šifriranja tokova podataka niz znakova poruke $m_0,m_1,m_2,...$ šifrira se u
+niz
+znakova šifrata $c_0,c_1,c_2,...$ na sljedeći način. Pseudo-slučajan niz
+znakova $s_0,s_1,s_2,...$ generira se automatom čiji je ulaz tajni ključ.
+Znak u nizu $s_i$ ovisi o tajnom ključu i o prethodnom znaku
+$s_{i-1}$ dok znak $s_0$ ovisi o tajnom ključu i nekom javno definiranom
+parametru. Znak šifrata $c_j$ izračunava se
+kombiniranjem znaka poruke $m_j$ i
+znaka $s_j$ iz pseudo-slučajnog niza.
+
+Šifriranje tokova podataka najčešće se koristi u komunikaciji s puno smetnji
+kako bi se šifrat mogao prenositi u što manjim dijelovima tako da gubitak manjeg
+dijela podataka ne uzrokuje gubitak cijelog bloka podataka, kao što je to slučaj
+kod šifriranja blokova. Još jedna važna primjena je u sustavima koji zahtijevaju
+veliku brzinu prijenosa podataka jer se svaki znak šifrata može dešifrirati
+nezavisno čim dođe u sustav \cite[str. 1265]{van2011encyclopedia}.
+
+Algoritmi za šifriranje tokova podataka stvaraju se za specifične namjene,
+a najčešće korišteni algoritmi su RC4 za osiguravanje tokova pri prijenosu
+podataka u računalnim mrežama i A5/1 za osiguravanje
+podataka u mobilnim GSM mrežama.
+
+\subsection{Šifriranje blokova podataka}
+
+Algoritam za šifriranje blokova podataka za dani ključ $K$ definira
+šifriranje kao izračunavanje \emph{n} bita šifrata iz \emph{n} bita poruke, te
+dešifriranje
+kao izračunavanje \emph{n} bita poruke iz \emph{n} bita šifrata. Algoritam za
+šifriranje
+blokova trebao bi zadovoljavati dva osnovna svojstva: zbrku (engl.
+\emph{confusion}) i raspršenost (engl. \emph{diffusion}). Zbrka kod šifriranja
+predstavlja minimalnu statističku vezu između poruke i šifrata dok raspršenost
+uvjetuje da bi svaki bit poruke trebao utjecati na što veći dio šifrata.
+\cite[str. 152]{van2011encyclopedia}
+
+Šifriranje blokova podataka koristi se za osiguravanje tajnosti u komunikaciji,
+ali isto tako i za sigurnu pohranu podataka u sklopu računalnih sustava.
+Najzastupljeniji algoritmi za šifriranje blokova podataka su DES (engl.
+\emph{Data Encryption Standard}) \cite[str. 295]{van2011encyclopedia} i AES (engl. \emph{Advanced
+Encryption Standard}) \cite[str.1046]{van2011encyclopedia}
+\cite{daemen2013design}. Algoritam DES predstavlja stari standard koji
+se koristi u sustavima koji su dizajnirani u prošlosti. Algoritam AES je brži i
+sigurniji nasljednik algoritma DES. Osnovne značajke tih algoritama su sljedeće:
+\begin{itemize}
+\item DES šifrira blokove veličine 64 bita s ključem duljine 56 bita.
+\item AES šifrira blokove veličine 128-bita s ključevima duljine 128, 192 ili
+256 bita.
+\end{itemize}
+Što je veličina ključa veća algoritam je u pravilu sigurniji jer je prostor u
+kojem se generiraju ključevi veći i teži za pretražiti od strane napadača.
+Veličina ključa izravno utječe i na brzinu šifriranja, odnosno dešifriranja. Što
+je ključ veći to je brzina manja.
+
+Algoritmi za šifriranje blokova predstavljaju prilagodljivi primitiv za
+ostvarivanje raznovrsnih namjena, osim šifriranja podataka, poput
+autentificiranog šifriranja (engl. \emph{authenticated encryption}), MAC
+algoritama i funkcija kriptografskog sažetka. Algoritmi šifriranja blokova
+mogu se koristiti u različitim načinima rada kako bi mogli biti zadovoljeni
+različiti sigurnosni zahtjevi.
+
+\subsubsection{Načini šifriranja blokova}
+Vrlo važan parametar kod šifriranja blokova je način primjene algoritma
+šifriranja blokova. Način rada algoritama za šifriranje blokova
+određuje na koji će se način šifrirani blokovi spajati u konačni šifrat. Odabir
+načina rada izravno utječe na sigurnost i brzinu šifriranja blokova \cite[str.
+790]{van2011encyclopedia}. Najznačajniji i najčešće korišteni načini rada su CBC
+i CTR. Opis načina rada CBC i CTR prikazan je na primjeru algoritma AES koji je
+trenutni
+standard za simetrično šifriranje blokova podataka. Dok CBC način rada omogućuje
+samo šifriranje blokova podataka, CTR i drugi srodni načini rada mogu se
+koristiti za šifriranje tokova podataka zbog toga što iz tajnog ključa
+generiraju pseudo-slučajan niz znakova koji se mogu koristiti za šifriranje
+tokova podataka.
+
+CBC (engl. \emph{Cipher Block Chaining}) koristi ulančavanje
+blokova na način da se šifrat prošlog bloka bit po bit zbraja po modulu 2 s
+trenutnom porukom prije šifriranja te poruke. Početni dio poruke zbraja se s
+promjenjivom početnom vrijednosti koja se označava s IV (engl.
+\emph{Initialization Vector}). Dodavanje operacije zbrajanja poruke u aritmetici
+modulo 2 omogućuje veću količinu raspršenosti podataka u odnosu na
+najjednostavniji ECB (engl. \emph{Electronic CodeBook}) način rada. Blokovi
+postaju međusobno ovisni ali samo u okviru definiranog prozora. Prozor
+predstavlja niz određenog broja blokova koji izravno ili neizravno utječu jedni
+na druge. U CBC
+načinu rada odnos između poruke $p_i$, ključa $K$ i šifrata $c_i$ definiran je
+sljedećim izrazima:
+$$c_i=E_K(p_i \oplus c_{i-1});\ p_i=D_K(c_i \oplus c_{i-1})$$
+
+CTR (engl. \emph{CounTeR mode}) način rada omogućuje potpunu nezavisnost između
+blokova, ali se za svaki blok koji se šifrira koristi dodatan podatak čija je
+svrha povećanje raspršenosti prilikom kodiranja. Kako su svi blokovi međusobno
+neovisni mogu se paralelno obrađivati što olakšava brzo izračunavanje šifrata iz
+poruke i obrnuto. Koristi se dodatni podatak stvoren iz jedinstvene jednokratne
+vrijednosti (engl. \emph{nonce}), početne vrijednosti IV i brojača koji kreće od
+broja jedan. Za svaki blok vrijednost tog podatka uvećava se za jedan
+\cite{rfc3686}. Izračun šifrata $c_i$ iz poruke $p_i$ uz ključ $K$ i dodatnu
+vrijednost CTR bloka $CTRBLK$ definiran je sa sljedećim izrazima:
+$$CTRBLK = nonce || IV || i$$
+$$c_i = p_i \oplus E_K(CTRBLK)$$
+$$p_i = c_i \oplus E_K(CTRBLK)$$
+gdje $||$ označava operaciju konkatenacije nizova okteta.
+
+CBC način rada se smatra standardom, ali CTR ostvaruje veću
+brzinu i sigurnost uz redovito osvježavanje i izbjegavanje ponovnog korištenja
+istih dodatnih podataka.
+
+\subsection{Autentificirano šifriranje}
+Autentificirano šifriranje (engl. \emph{Authenticated Encryption} - AE) omogućava
+da se tijekom izračuna šifrata izračuna i autentifikacijski podatak (MAC) koji
+će potvrditi da šifrat nije mijenjan prilikom prijenosa podataka. Kao osnova za
+AE koristi se algoritam za simetrično šifriranje blokova. Šifriranje se
+odrađuje s jednim od prethodno navedenih načina rada (CBC, CTR), ali postoje različiti
+pristupi izračuna autentifikacijskih podataka. Autentifikacijski podaci se, u
+pravilu, izračunavaju uz pomoć funkcije kriptografskog sažetka i danog ključa
+(MAC, odnosno HMAC). Za svaku operaciju potrebno je koristiti različite
+ključeve $K_1$ za autentifikaciju i $K_2$ za šifriranje. Postoje sljedeći načini
+izračunavanja AE podataka:
+\begin{itemize}
+\item Autentificiraj pa šifriraj (engl. \emph{Mac-then-Encrypt} - MtE) - iz izvorne
+poruke $M$ prvo se generiraju podaci za autentifikaciju pa se zatim šifrira poruku
+zajedno s autentifikacijskim podacima.
+$$MtE=E_{K_2}(M,MAC_{K_1}(M))$$
+\item Šifriraj pa autentificiraj (engl. \emph{Encrypt-then-Mac} - EtM) - prvo se
+izvornu poruku šifrira pa se podaci za autentifikaciju stvaraju iz šifrata i
+šalju zajedno.
+$$C=E_{K_2}(M);\ EtM=C,MAC_{K_1}(C)$$
+\item Šifriraj i autentificiraj (engl. \emph{Encrypt-and-Mac}) - odvojeno se
+šifrira poruka i izračunavaju autentifikacijski podaci iz poruke i šalju
+zajedno.
+$$E\&M=E_{K_2}(M),MAC_{K_1}(M)$$
+\end{itemize}
+
+Trenutno se u praksi koriste AE programska ostvarenja čija je osnova algoritam
+šifriranja
+blokova AES, AES-CCM \cite{rfc6655} i AES-GCM \cite{rfc5288}. AES-CCM koristi
+način rada CBC i izračunavanje MtE, dok AES-GCM koristi način rada CTR i
+izračunavanje EtM. Oboje su se pokazali dovoljno sigurnim za primjenu, ali zbog
+pronađenih ranjivosti izračunavanja EtM savjetuje se koristiti MtE za sigurnu
+komunikaciju \cite{rfc7366}.
+
+AE se smatra standardom za sigurno slanje podataka jer osigurava tri sigurnosna
+zahtjeva odjednom: tajnost, integritet i autentifikaciju, što predstavlja ključ
+sigurne komunikacije, jer nije dovoljno samo tajno razmjenjivati podatke, već i
+utvrditi da podaci nisu mijenjani tijekom prijenosa
+\cite[str. 54]{van2011encyclopedia}.
+
+\section{Asimetrični kriptosustav}
+Asimetrični kriptosustav koristi različite ključeve za šifriranje i dešifriranje
+podataka. Ako se podatak šifrira s jednim ključem može se dešifrirati samo s
+odgovarajućim drugim
+ključem i obratno. U ovom sustavu moguće je jedan ključ učiniti javnim bez
+ugrožavanja tajnosti drugog ključa \cite[str. 49]{van2011encyclopedia}.
+
+Asimetrično šifriranje se općenito može definirati sljedećim izrazima, gdje $E$
+označava šifriranje, $D$ dešifriranje, $PK$ javni ključ, $SK$ tajni ključ, $M$
+poruku, a $C_1$ i $C_2$ šifrate:
+$$E_{PK}(M)=C_1;\ D_{SK}(C_1)=M$$
+$$E_{SK}(M)=C_2;\ D_{PK}(C_2)=M$$
+
+U asimetričnom kriptosustavu svaki tajni ključ ima odgovarajući javni
+ključ. Asimetrični kriptosustavi mogu se primjenjivati za razne namjene poput
+digitalnog potpisa, digitalne omotnice i dogovaranja zajedničkog tajnog ključa
+između komunicirajućih strana. U ovom sustavu također vrijedi da je sigurnost
+veća što je veća duljina ključa.
+Za postizanje iste razine sigurnosti, u asimetričnom kriptosustavu se
+koriste ključevi veće duljine u odnosu na ključeve korištene u simetričnom
+kriptosustavu.
+
+\subsection{Digitalni potpis}
+U slučaju da se podatak šifrira tajnim ključem, svi koji su u posjedu
+odgovarajućeg javnog ključa mogu doći do tih podataka. Navedeni postupak služi
+za osiguravanje neporecivosti, autentifikacije i integriteta poruke te
+predstavlja digitalni potpis. Neporecivost je moguće ostvariti jer svaka strana
+u komunikaciji posjeduje tajni ključ koji mora biti poznat samo toj strani i
+nikome drugome.
+
+Kako se digitalnim potpisom osigurava integritet poruke nije potrebno šifrirati
+cjelokupni sadržaj poruke, već je dovoljno šifrirati samo njezin sažetak.
+Digitalni potpis stvara se korištenjem kriptografskog sažetka, čiji se
+rezultat šifrira tajnim ključem pošiljatelja. Stvaranje digitalnog potpisa
+poruke $M$
+korištenjem funkcije sažetka $h$ korištenjem tajnog ključa $SK$ opisano je
+sljedećim izrazom:
+$$\mathit{digitalni\_potpis} = E_{SK}(h(M))$$
+Digitalni potpis se uvijek šalje uz odgovarajuću poruku, kako bi se mogao
+provjeriti integritet i autentičnost poruke. Po primitku poruke primatelj uzima
+odgovarajući javni ključ $PK$ kako bi dešifrirao primljeni izvorni sažetak
+poruke $S_1$ i
+usporedio taj sažetak s izračunatim sažetkom $S_2$:
+$$S_1 = E_{PK}(\mathit{digitalni\_potpis});\ S_2=h(M)$$
+
+U slučaju da su sažeci $S_1$ i $S_2$ jednaki znamo da je poruku potpisao vlasnik
+tajnog
+ključa koji odgovara korištenom javnom ključu i da poruka nije mijenjana tijekom
+prijenosa.
+
+\nomenclature{RSA}{Rivest Shamir Alderman asimetrični algoritam}
+\nomenclature{ECDSA}{\emph{Elliptic Curve Digital Signature Algorithm}}
+Za digitalni potpis najzastupljeniji algoritmi su DSA(engl. \emph{Digital
+Signature Algorithm}), RSA (Rivest Shamir Alderman) i ECDSA (engl.
+\emph{Elliptic Curve DSA}) . Algoritam
+DSA \cite{gallagher2013fips} koristi ElGamalov
+način stvaranja digitalnog potpisa \cite[str. 395]{van2011encyclopedia} koji se temelji na
+problemu diskretnog logaritma \cite[str. 352]{van2011encyclopedia}. U sklopu
+standarda definirane su tri veličine ključa, 1024, 2048 i 3072 bita
+\cite{gallagher2013fips}.
+
+Algoritam RSA temelji se na problemu faktorizacije
+velikih prostih brojeva i može koristiti ključeve različitih veličina. Algoritmi
+DSA i RSA pružaju usporedivu razinu sigurnosti za istu duljinu
+tajnog ključa. RSA koristi ključeve duljine 1024, 2048 i 4096 bitova.  Razina
+sigurnosti raste s veličinom ključa, ali brzina šifriranja/dešifriranja pada.
+
+\subsection{Digitalna omotnica}
+Ako se sadržaj poruke šifrira javnim ključem do izvorne poruke može doći samo
+strana
+koja posjeduje odgovarajući tajni ključ. Taj postupak služi za ostvarivanje
+tajnosti u komunikaciji i predstavlja digitalnu omotnicu.
+
+Kako je postupak asimetričnog šifriranja značajno sporiji od postupka simetričnog
+šifriranja ta se dva postupka zajednički primjenjuju u hibridnom načinu
+šifriranja. U hibridnom načinu šifriranja poruka se šifrira simetričnim ključem
+$K$, a taj simetrični ključ javnim ključem $PK$ primatelja podataka kako bi
+samo on mogao doći do ključa, odnosno sadržaja šifrirane poruke $M$:
+$$DO_1 = E_K(M);\ DO_2 = E_{PK}(K)$$
+$$digitalna\_omotnica = DO_1, DO_2$$
+
+Za otvaranje digitalne omotnice, odnosno dešifriranje izvorne poruke primatelju je
+dovoljan tajni ključ $SK$ koji odgovara javnom ključu $PK$ s kojim je
+stvorena omotnica:
+$$K = D_{SK}(DO_2);\ M = D_{K}(DO_1)$$
+
+Za stvaranje digitalne omotnice koristi se algoritam RSA koji je opisan u
+prethodnom potpoglavlju.
+
+\subsection{Dogovaranje zajedničke tajne}
+\label{sec:dh}
+Ako se komunicirajuće strane prethodno ne poznaju te ne posjeduju tajne i
+javne ključeve za zaštitu komunikacije, one mogu dogovoriti zajedničku tajnu
+koja će se koristiti za zaštitu komunikacije. Protokoli za dogovaranje
+zajedničke tajne koriste tajnu vrijednost i odgovarajuću javnu vrijednost za
+dogovor, te predstavljaju poseban slučaj asimetričnog kriptosustava.
+
+Većina algoritama za dogovaranje zajedničke tajne definirana je u
+protokolu Diffie-Hellman \cite{DH} (DH), a temelji se na problemu diskretnog
+logaritma. Postupak izračuna pobliže je opisan u nastavku.
+
+\nomenclature{DH}{protokol Diffie-Hellman}
+
+Kako bi komunicirajuće strane mogle dogovoriti zajedničku tajnu moraju dijeliti 
+iste početne vrijednosti za izračun. To su:
+\begin{itemize}
+\item prosti broj $p$ i
+\item generator $1 \leq g \leq p-1$ takav da je $g^{p-1} \equiv 1(mod p)$.
+\end{itemize}
+
+Neka su započinjatelj (I) i primatelj (R) dvije strane koje žele dogovoriti
+zajedničku tajnu. Tijek komunikacije je sljedeći:
+\begin{enumerate}
+\item I generira nasumičnu vrijednost $1 \leq x \leq p-2$ i izračunava $z_x=g^x mod p$.
+Rezultat operacije $z_x$ šalje strani R.
+\item R generira nasumičnu vrijednost $1 \leq y \leq p-2$ i izračunava $z_y=g^y mod p$.
+Rezultat operacije $z_y$ šalje strani I.
+\item Nakon primitka $z_y$, I izračunava $K_I = {z_y}^x mod p$.
+\item Nakon primitka $z_x$, R izračunava $K_R = {z_x}^y mod p$.
+\end{enumerate}
+
+Vrijednosti $K_I$ i $K_R$ su jednake te su time strane I i R
+uspješno dogovorile zajedničku tajnu. Vrijednosti $x$ i $y$ predstavljaju tajne
+ključeve u razmjeni dok su $z_x$ i $z_y$ javni ključevi. Napadač prisluškivanjem
+komunikacije ima pristup vrijednostima $p$, $g$, $z_x$ i $z_y$. Pronalazak
+dogovorene tajne je ekvivalentan pronalaženju jednog tajnog ključa. U slučaju
+dobro odabranih parametara to je težak problem. Ako su ključevi
+dobro generirani i dovoljno veliki pasivni napadač nije u mogućnosti doći do
+zajedničke tajne. \cite[str. 341]{van2011encyclopedia}
+
+\subsection{Algoritmi temeljeni na eliptičnim krivuljama}
+
+Nad skupom točaka eliptične krivulje mogu se definirati sve matematičke
+operacije potrebne za izvođenje kriptografskih operacija poput onih temeljenih
+na problemu diskretnog algoritma.
+Algoritmi koji koriste eliptične krivulje
+koriste manje kriptografske ključeve u odnosu na standardne algoritme.
+Posljedica toga je brži izračun kriptografskih operacija za jednaku
+razinu sigurnosti u odnosnu na standardne algoritme.
+Algoritmi temeljeni na eliptičnim krivuljama mogu se koristiti za digitalno
+potpisivanje i dogovor zajedničke tajne.
+\cite[str. 397]{van2011encyclopedia}
+
+\nomenclature{EC}{kriptografski algoritam temeljen na eliptičnim krivuljama}
+
+Algoritam ECDSA \cite[str. 407]{van2011encyclopedia} je inačica algoritma DSA
+koja umjesto diskretnih algoritama za
+temelj koristi eliptične krivulje. Prednost eliptičnih krivulja je
+manja veličina tajnog ključa za postizanje jednake razine sigurnosti. Algoritam
+RSA s
+ključem duljine 2048 daje podjednaku razinu sigurnosti kao algoritam ECDSA s
+veličinom ključa
+od 224 bita.
+
+ECDH \cite[str. 400]{van2011encyclopedia} (engl. \emph{Elliptic Curve DH}) je
+inačica protokola DH koja koristi
+eliptične krivulje za izračunavanje zajedničke tajne. Glavne prednosti su
+smanjenje veličine ključeva uz zadržavanje iste razine sigurnosti te
+jednostavnije i brže generiranje tajnih ključeva.
+Iako algoritmi temeljeni na eliptičnim krivuljama pružaju mnoge prednosti u vidu
+manje veličine ključeva i bržeg izračuna, potrebno je odabrati pouzdanu
+eliptičnu krivulju za zadovoljavajuću razinu sigurnosti \cite{safecurves}.
+
+\section{Autentificirano dogovaranje zajedničke tajne}
+
+Protokoli za dogovor zajedničke tajne ranjivi su na napad čovjek u sredini
+(engl. \emph{Man-in-the-Middle attack} - MITM). Ako se napadač nađe između dvije
+komunicirajuće strane on može neovisno dogovoriti zajedničku tajnu sa svakom
+stranom i doći do svih podataka koje te dvije strane razmjenjuju. Tijek napada
+na protokol Diffie-Hellman (DH) je sljedeći:
+\begin{enumerate}
+\item Započinjatelj (I) generira vrijednost $x$, izračunava $z_x=g^x mod p$ i
+šalje primatelju (R).
+\item Napadač zaprima vrijednost $z_x$. Potom generira svoju vrijednost $n$ i
+šalje započinjatelju vrijednost $z_n$. Započinjatelj I i napadač na kraju imaju
+dogovoren ključ
+$K_{I'}={z_x}^n mod p$.
+\item S druge strane napadač započinje dogovor ključa sa stranom R s
+vrijednostima $n$ i $z_n$. Primatelj R i napadač na kraju imaju dogovoren ključ
+$K_{R'}={z_y}^n mod p$.
+\end{enumerate}
+\nomenclature{MITM}{Napad čovjek u sredini}
+
+Kao rezultat navedenog napada napadač ima dogovoren ključ $K_{I'}$ sa
+započinjateljem i ključ $K_{R'}$ s primateljem i može primati šifrirani promet s
+jedne strane, dešifrirati ga i ponovo šifrirati kako bi ga poslao drugoj strani.
+
+Za zaštitu protokola DH od napada čovjek u sredini stvoreni su
+novi protokoli koji štite DH razmjenu kako bi onemogućili napadača
+da utječe na uspostavu zajedničke tajne. Protokol STS (engl.
+\emph{Station-to-Station}) je prvi protokol koji sprječava napad
+čovjek u sredini korištenjem autentifikacije. Autentifikacija se postiže
+korištenjem asimetričnog algoritma za digitalno potpisivanje poruka u
+komunikaciji. Za digitalni potpis poruka potrebno je razmijeniti certifikate s
+kojima će se potpisivati. Certifikati se mogu razmijeniti u posebnoj inačici
+protokola STS koja se zove potpuni STS (engl. \emph{Full STS}  \cite[str.
+1256]{van2011encyclopedia}.
+
+
+Razmjena poruka u potpunoj inačici protokola STS definirana je na sljedeći
+način:
+\begin{itemize}
+\item Započinjatelj I generira tajnu vrijednost $x$, izračunava $z_x=g^x mod p$
+i šalje primatelju R.
+\item Primatelj R generira tajnu vrijednost $y$ i izračunava $z_y=g^y mod p$. Uz
+to izračunava i ključ $K={z_x}^y mod p$ i s njim šifrira digitalno potpisane
+podatke $z_y$ i $z_x$. Konačna poruka koja se šalje započinjatelju koja uključuje
+certifikat $Cert_R$ je sljedeća:
+$z_y, Cert_R, E_K(S_R(z_y,z_x))$
+\item Započinjatelj I prima poruku i izračunava ključ $K$ s pomoću kojeg
+dešifrira $S_R(z_y,z_x)$ i provjerava digitalni potpis korištenjem certifikata
+$Cert_R$. Ako je provjera uspješna započinjatelj odgovara sa sličnom porukom
+gdje je promijenjen redoslijed podataka digitalnom potpisu:
+$Cert_I, E_K(S_I(z_x,z_y))$.
+\end{itemize}
+\no{
+\begin{enumerate}
+\item Započinjatelj (I) generira nasumičnu vrijednost $x$ i izračunava $z_x=g^x
+    mod p$ i šalje prema primatelju (R).
+\item Primatelj R generira nasumičnu vrijednost $y$ i na isti način računa
+    $z_y=g^y mod p$. Potom izračunava tajni ključ $K_R={z_x}^y$ i digitalni potpis s
+    pomoću svog privatnog ključa $SK_R$ od $z_x$ i $z_y$, $S_R=E_{SK_R}(z_x,z_y)$.
+    Taj digitalni potpis potom šifrira korištenjem ključa $K_R$ i šalje
+    započinjatelju $z_y, E_{K_R}(S_R)$.
+\item Započinjatelj po primitku izračunava tajni ključ $K_I={z_y}^x$, dešifrira $S_R$
+    jer su ključevi $K_I$ i $K_R$ jednaki. Potom s javnim ključem primatelja
+    $PK_R$ provjerava valjanost digitalnog potpisa. Ako je provjera uspješna
+    onda primatelju šalje šifrirani digitalni potpis koji se izračunava na
+    istovjetan način kao i kod primatelja: $E_{K_I}(S_I)$ gdje je
+    $S_I=E_{SK_I}(z_y,z_x)$.
+\item Primatelj R dešifrira podatke pomoću prethodno izračunatog ključa $K_R$
+    i pomoću javnog ključa $PK_I$ provjerava valjanost digitalnog potpisa. U
+    slučaju da je provjera uspješna primatelj i započinjatelj su uspješno
+    autentificirano dogovorili zajedničku tajnu.
+\end{enumerate}
+U slučaju da se započinjatelj i primatelj prethodno ne poznaju, u sklopu druge i
+treće poruke
+šalju se digitalni certifikati s javnim ključevima.
+}
+
+Uvođenjem digitalnog potpisa, odnosno korištenjem javnih ključeva, osigurano je
+da napadač nije u
+mogućnosti izravno ugroziti dogovor i utjecati na dogovorenu zajedničku tajnu.
+Pritom postoje druga dva sigurnosna problema: mogućnost vezivanja krivog
+identiteta za dogovorenu zajedničku tajnu (engl. \emph{identity misbinding
+attack}) i problem korištenja dogovorene zajedničke tajne u sklopu dogovora što
+ne zadovoljava zahtjev korištenja odvojenih ključeva za različite kriptografske
+operacije (engl. \emph{key separation}) \cite{Krawczyk2003sigma}.
+
+\subsection{SIGMA}
+\label{sec:sigma}
+
+\nomenclature{SIGMA}{protokol \emph{SIGn and MAc}}
+
+Protokol SIGMA (engl. \emph{SIGn and MAc}) je protokol za autentificirano
+dogovaranje zajedničke tajne koji je zasnovan na korištenju digitalnog potpisa i
+MAC algoritma za zaštitu dogovora. Protokol SIGMA je formalno verificiran i
+predstavlja rješenje koje omogućuje siguran dogovor zajedničke tajne
+\cite{Krawczyk2003sigma}.
+
+Dogovaranje zajedničke tajne u protokolu SIGMA odvija se na sljedeći
+način:
+\begin{enumerate}
+\item Započinjatelj (I) generira nasumičnu vrijednost $x$ i izračunava $z_x=g^x
+    mod p$ i šalje prema primatelju (R).
+\item Primatelj (R) generira nasumičnu vrijednost $y$ i izračunava $z_y=g^y mod
+    p$. Potom izračunava tajni ključ $K_R$ pomoću KDF (engl. \emph{key
+    derivation function}, pojam je objašnjen u sljedećem poglavlju) funkcije za
+    izračunavanje ključeva iz zajedničke tajne $SS_R=z_x^{y}$, $K_R=KDF(SS_R)$.
+    Zatim šalje odgovor započinjatelju koji sadrži $z_y$, javni ključ $PK_R$,
+    digitalni potpis $S_R=E_{PK_R}(z_x, z_y)$, i MAC od javnog ključa $PK_R$
+    zaštićen s tajnim ključem $K_R$, $M_R=MAC_{K_R}(PK_R)$.
+\item Započinjatelj po primitku poruke izračunava ključ $K_I$ na način analogan
+    primatelju (iz vrijednosti $z_y$ i $x$). Zatim provjerava dobiveni digitalni
+    potpis $S_R$ i MAC $M_R$. Ako provjera uspije primatelju šalje poruku sa
+    svojim javnim ključem $PK_I$, digitalnim potpisom $S_I=E_{PK_I}(z_y, z_x)$ i
+    MAC od javnog ključa $PK_R$ zaštićen s tajnim ključem $K_I$, 
+    $M_I=MAC_{K_I}(PK_I)$.
+\item Primatelj po primitku provjerava valjanost digitalnog potpisa $S_I$ i
+    MAC-a $M_I$. Ako su vrijednosti valjane, uspješno je dogovorena
+    zajednička tajna.
+\end{enumerate}
+
+Ključna prednost protokola SIGMA je zaštita identiteta koji se razmjenjuje s
+pomoću MAC funkcije uz ključ dobiven iz Diffie-Hellman izračuna. Na taj se
+načini izravno vezuje identitet (javni ključ) dogovaratelja uz dogovorenu
+zajedničku tajnu. To izravno onemogućava napad čovjek u sredini jer treća
+strana nije u mogućnosti utjecati na dogovorenu zajedničku tajnu.
+
+\section{Pseudo nasumične funkcije}
+
+Pseudo nasumična funkcija (PRF, engl. \emph{pseudo random function}) je
+deterministička funkcija koja za određeni ključ i ulaz daje rezultat koji se ne
+može razlikovati od nasumične funkcije ulaza.
+\cite[str. 994]{van2011encyclopedia}. Idealna PRF ima za cilj postizanje
+neprepoznatljivosti između rezultata funkcije i nasumičnih podataka. 
+Primjena pseudo nasumičnih funkcija vrlo je
+široka u kriptografiji. Koriste se za dobivanje sigurnih ključeva iz
+zajedničkih tajni, kao zamjena za korištenje generatora slučajnih brojeva,
+za dobivanje niza ključeva iz jednog izvornog ključa te za izračunavanje
+funkcija MAC za provjeru integriteta podataka. Pseudo nasumične funkcije se
+najčešće izvode korištenjem funkcija kriptografskog sažetka.
+\nomenclature{PRF}{\emph{Pseudo Random Function} - pseudo nasumična funkcija}
+
+\subsection{Funkcije izračunavanja ključeva}
+Nakon dogovora jedne zajedničke tajne, komunicirajuće strane žele koristiti tu
+tajnu za zaštitu komunikacije. Dogovorena tajna može imati različite duljine pa
+nastaje problem kako na siguran način dobiti ključ određene duljine za
+kriptografske algoritme koji će se koristiti. Uz to, da bi se ostvarili svi
+potrebni sigurnosni zahtjevi potrebno je više različitih vrsta kriptografskih
+algoritama. Za različite vrste algoritama nije preporučljivo koristiti iste
+tajne, već je potrebno korištenjem nekog algoritma izračunati različite ključeve za
+svaki kriptografski algoritam. Ta dva zahtjeva se ostvaruju korištenjem funkcije za
+izračun ključeva (engl. \emph{Key Derivation Functions} - KDF). Te se funkcije
+koriste i u računalnim sustavim za pohranjivanje lozinki korisnika, kako bi se
+mogućim napadačima otežalo razotkrivanje lozinki.
+\nomenclature{KDF}{\emph{Key Derivation Function} - funkcija za izračunavanje
+ključeva}
+
+KDF se izvodi korištenjem pseudo-nasumičnih funkcija koje se izvode određenim 
+brojem ponavljanja funkcija kriptografskog sažetka nad tajnim podacima. Funkcija
+kriptografskog sažetka se u pravilu koristi u HMAC  načinu rada za potrebe
+KDF-a. Broj ponavljanja određuje se ovisno o primjeni: veći je za pohranu
+lozinki u odnosu na izračunavanje tajnih ključeva potrebnih za komunikaciju.
+
+Standardizirani i najčešće korišteni algoritmi za KDF su sljedeći:
+\begin{itemize}
+\item PBKDF i PBKDF2 (engl. \emph{Password-Based KDF}) \cite{chen2008recommendation}
+    koriste se za pohranu autentifikacijskih
+podataka iz korisničkih lozinki. Izvodi se veliki broj iteracija kako bi se
+napadaču otežalo pogađanje početne lozinke iz tih podataka. Preporučeni broj
+iteracija je barem 1000.
+\item HKDF (engl. \emph{HMAC-based Extract-and-Expand KDF})
+\cite{rfc5869} namijenjen je za izračun tajnih ključeva iz dogovorene zajedničke
+tajne i ne koristi dodatne iteracije. Svaki oktet neovisno se generira kako bi
+se povećala sigurnost izračunatog ključa.  HKDF omogućuje definiranje dodatnih
+varijabli kako bi se povećala kvaliteta ključeva.  Veći broj iteracija u ovom
+slučaju nije poželjan jer se izračunavanje ključeva radi za vrijeme
+komunikacije. Preveliki broj iteracija bi uzrokovao usporavanje komunikacije
+\cite{krawczyk2010cryptographic}.
+\end{itemize}
+% vim: spell spelllang=hr

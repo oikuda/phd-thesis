@@ -1,0 +1,240 @@
+\thispagestyle{empty}
+\section*{Extended abstract}
+
+{\Large{\textbf{Secure layer-agnostic agreement protocol for cryptographically
+agile communication}}} \\
+
+Securing data and communication channels implies the use of cryptography. To
+achieve primary security requirements (confidentiality, integrity and
+availability) different types of cryptographic algorithms are used.
+Cryptographic algorithms can be divided into three groups: symmetric encryption,
+asymmetric encryption and cryptographic hashes. These algorithms are often used
+in different combinations to achieve better performance and various security
+requirements.
+There is a vast amount of cryptographic algorithms currently available. They are
+all constantly being improved but at the same time new vulnerabilities are being
+discovered and exposed. An algorithm with vulnerabilities, from the
+cryptanalysis point of view, can still be safe for usage, but the identified
+vulnerability points to a weakness in its definition. Such a
+weakness can eventually be used for various attacks on systems that are secured
+by that algorithm, so vulnerable algorithms should be replaced as soon as
+possible.
+
+However, replacing cryptographic algorithms that are tightly integrated into
+communication protocols would eventually require changing the protocols
+themselves. This usually means that the running software or firmware needs to be
+updated. Changing protocols may prove to be an issue when
+dealing with typically large and complex communication systems. This is the
+reason why cryptographic algorithms should never be tightly integrated into a
+communication protocol and the solution is to use the concept of cryptographic
+agility. Cryptographic agility is characterized by the ability to change
+cryptographic algorithms and keys while using the same protocols and deployed
+systems. On the other hand, using agility makes it possible to use the same
+cryptographic algorithms or protocols over a wide array of communication
+protocols thus enabling easier replacement of potentially insecure cryptographic
+algorithms.
+
+Cryptographic agility is a known principle that is already integrated into most
+widely deployed secure channel protocols, such as IPsec, SSL, TLS and SSH.
+However, each of the implemented agility mechanisms is strictly tied to that
+solution and cannot be easily extracted as a standalone mechanism
+applicable for other purposes. The possible solution that would enable this
+functionality is an adaptable cryptographically agile protocol that is proposed
+in this thesis. This solution can be used on various network layers,
+architectures and devices. Furthermore, the aim is the agreement of
+cryptographic prerequisites (algorithms and keys) in order to enable various
+security requirements in an interconnected environment. Using the proposed
+cryptographically agile solution enables protection of protocols that don’t have
+any security mechanisms deployed and enable development of new secure protocols
+on top of the agreed primitives.
+
+The doctoral thesis describes a novel, lightweight and adaptable solution which
+is
+easily applicable in existing networked environments and currently emerging
+areas, such as Internet of Things (IoT).
+Security isn’t always integrated in current IoT solutions and is typically
+planned at a later stage as an upgrade. The communication between IoT devices
+needs to be secure which requires an agreement protocol to enable communicating
+parties to agree on a cryptographic algorithm and keys used to protect the
+exchanged messages. The IoT ecosystem needs a flexible and adaptable agreement
+mechanisms because IoT devices have limited computing and bandwidth resources.
+Secure communication is possible only after communicating devices agree on a set
+of cryptographic algorithms and keys. Since IoT services are driven by the
+underlying data sources, it is critical to validate a sensor as a credible data
+source and to protect the exchanged data.
+
+\subsection*{Chapter 2 - Cryptography}
+
+The second chapter describes basic cryptographic primitives, cryptographic
+hashes, symmetric and asymmetric cryptosystems and focuses on their application
+in current communication systems. It specifically describes the primitives used
+for achieving an agile and adaptive agreement on cryptographic keys and
+algorithms. The needed primitives include a HMAC (Hashed Message Authentication
+Code) algorithm based on cryptographic hashes with a secret key, digital
+signatures for authentication that combine cryptographic hashes with asymmetric
+encryption algorithms and the Diffie-Hellman key exchange that uses asymmetric
+cryptography to generate secret data to conduct a secure exchange. These three
+mechanisms are needed to conduct a SIGMA (sign-and-mac) exchange between two
+communicating parties. The SIGMA exchange represents an authenticated key
+exchange algorithm that secures the exchange from man in the middle attacks by
+protecting the data used for digital signature verification with HMAC and
+vice versa. The resulting secret data needs to be further processed by
+using a key derivation function (KDF) based on hash functions (Hashed KDF). This
+is to ensure that keys generated from the same secret data are computationally
+independent. Computational independence represents that the discovery of one key
+won't reveal any data on other keys calculated from the same secret data.
+
+\subsection*{Chapter 3 - Cryptographycally agile communication}
+
+The third chapter describes modern cryptographically agile protocols. Most of
+these protocols are secure channel protocols that have many components and thus
+tend to be fairly complex (e.g. SSL/TLS, IPsec, SSH). That complexity makes it
+hard, or even impossible in certain cases, to create a formal model that can be
+thoroughly verified to achieve provable security. The lack of security proofs is
+probably one of the causes of the recent increase of attacks on SSL/TLS.
+Verification of certain solutions can also reveal previously unknown
+vulnerabilities. Protocol complexity also increases the possibility
+of implementation problems which can cause significant security problems even if
+the protocol design is provably secure. The chapter focuses on describing
+established cryptographically agile solutions and compares them to modern
+solutions like tcpcrypt, MinimaLT and QUIC that employ a less complex approach
+to secure channels. All these solutions are compared to ACAP, the lightweight
+layer-agnostic agreement protocol described in the thesis. The main advantages
+of ACAP are a layer-agnostic architecture that enables its application on all
+communication layers and a simple architecture that enables formal verification
+and reduces the possibility of implementation problems. ACAP represents an easy
+to integrate and adaptable building block that distributes secure communication
+prerequisites i.e. cryptographic keys and algorithms.
+
+\subsection*{Chapter 4 - Secure cryptographic agreement protocol}
+
+The ACAP protocol is described in the fourth chapter. It consists of four
+messages: \initi{}, \initr{}, \listi{} and \listr{}. After the message
+exchange,
+both communicating parties have access to the following data: secret key
+generated from the Diffie-Hellman shared secret, public keys of both sides for
+authentication and a list of cryptographic algorithms supported by both sides.
+The list of supported cryptographic protocols is divided into groups and agreed
+upon for each group. The first algorithm that is on the client list and is
+present on the server list is chosen as the agreed algorithm. ACAP employs the
+following security mechanisms: computational independence of secret keys by
+using HKDF, denial of service attack mitigation by separating the most expensive
+operations in an asynchronous background process, trust establishment that
+enables both manual and automatic trust verification through PKI. Additionally,
+the SIGMA design prevents the man in the middle and replay attack on the
+protocol. At the end of the chapter a comprehensive comparison of the SSH
+transport layer protocol negotiation and ACAP is given.
+
+\subsection*{Chapter 5 - Formal model specification}
+
+The formal security model and formal model verification is described in chapter
+five. The formal security model is described in the security protocol
+description language (SPDL) used by the Scyther security protocol verifier.
+Models in SPDL are defined by using protocols and roles. Each protocol can
+contain two or more roles that define multiple send and receive events. A
+comprehensive explanation of the model specification process is given on the
+Needham-Schroeder-Loewe protocol is give. After that the ACAP protocol model is
+described. The model is specified by using two protocols, a main protocol with
+the initiator and responder roles and a helper protocol that enabled the
+specification of the Diffie-Hellman key exchange. After the message exchange
+specification the following security requirements (Scyther claims) were defined,
+immutability of the DH exponentials, secrecy of the shared secret used to derive
+session keys and the inability of the attacker to interfere with the message
+exchange. All three security requirements were successfully verified by using an
+unbounded amount of protocol runs.
+
+\no{
+The main design motivation was to achieve provable security by extracting and
+integrating
+key exchange with algorithm agreement into a standalone solution. As a result,
+the designed lightweight solution is formally verified and achieves
+distribution of keys and algorithms in a provably secure manner. The conducted
+formal verification proves resilience to (pre)replay attacks and
+man-in-the-middle attacks.
+}
+
+\subsection*{Chapter 6 - Secure communication in the Internet of things}
+
+Chapter six describes how the designed solution can be introduced in the
+Internet of Things environment. It focuses on the device capabilities and
+introduces three device tiers, sensors, middle and cloud tier. All secure
+communication scenarios are conducted between devices from all tiers. The main
+proposed secure communication scenarios include authenticated device management,
+reliable data collection and sensitive data protection that are built on a
+platform independent architecture. After scenario descriptions a secure
+communication model for the IoT environment is given. The model consists of
+devices, public keys, communication layers, hardware capabilities, cryptographic
+algorithms and a set of secure communication operations. Secure communication
+operations are performed to enable all previously described communication
+scenarios. Furthermore, this chapter describes an adaptive cryptographic
+algorithm agreement procedure that takes into account the required level of
+security, cryptographic algorithm complexity, device battery power, bandwidth
+and processing power to choose a cryptographic algorithm that is best suited in
+the current environment.
+
+\subsection*{Chapter 7 - ACAP protocol implementation}
+
+A prototype implementation in Python and measurement results are described in
+chapter seven. 
+The proposed prototype architecture is composed from five key components:
+calculation and verification for cryptographic operations, message handling,
+layer independent communication, cryptographic algorithm agreement and
+communication with external applications. The prototype implementation supports
+communication on the following layers: Ethernet, IPv4, IPv6, TCP, UDP and SCTP
+with the same message formats that are shown in the appendix. It also supports
+standard and elliptic curve asymmetric algorithms for Diffie-Hellman exchanges
+and digital signatures.The prototype was tested in an emulated network
+environment in the IMUNES tool, which simplified network setup and enabled
+reliable measurements through environment automation. The measurements include
+the effect of public key size on protocol message size, agreement duration in
+regards to link delay and available bandwidth. They have shown that the solution
+is bandwidth efficient as the entire negotiation is performed in under two
+seconds on a 10 Kbps link. The use of elliptic curve cryptography is encouraged,
+especially for devices with constrained resources. Furthermore, this chapter
+provides an overview of cryptographic operation complexity for client and
+server which shows the deployed denial of service mitigation mechanisms.
+
+Finally, chapter eight concludes the thesis by giving a comprehensive overview
+of the designed layer-agnostic protocol that enables cryptographic agility for
+various devices and platforms. 
+
+The scope of this doctoral thesis covers the following scientific contributions:
+
+1. Secure layer-agnostic agreement protocol for cryptographically agile
+communication that is application and operating system independent.
+
+2. Methods for integrating the protocol with applications that use different
+communication models, especially P2P networks and client-server environments.
+
+3. Evaluation of protocol communication and agreement efficiency in a simulated
+and real network environment.
+
+\vspace{1cm}
+\textbf{Keywords}: cryptographic agility, secure communication, layer-agnostic
+design, authenticated key exchange, algorithm agreement, formal model
+verification
+
+\no{
+Secure communication is an important aspect of today’s interconnected
+environments and it can be achieved by the use of cryptographic algorithms and
+protocols. However, many existing cryptographic mechanisms are tightly
+integrated into communication protocols. Issues emerge when security
+vulnerabilities are discovered in cryptographic mechanisms because their
+replacement would eventually require replacing deployed protocols. The concept
+of cryptographic agility is the solution to these issues because it allows
+dynamic switching of cryptographic algorithms and keys prior to and during the
+communication. Most of today’s secure protocols implement cryptographic agility,
+but cryptographic agility mechanisms cannot be used in a
+standalone manner. In order to deal with the aforementioned limitations, this
+thesis describes a lightweight cryptographically agile agreement protocol. The
+design of the protocol is formally verified in an automated security
+verification tool. The agreement of cryptographic keys and algorithms is done in
+a computationally efficient way and has a low communication bandwidth
+requirement. Protocol integration and usage is demonstrated in an Internet of
+things environment with special emphasis on the agreement procedure which adapts
+to current device capabilities. Additionally, a prototype implementation which
+can communicate on different network layers is presented. The implementation is
+tested and evaluated in an emulated network environment. The tests demonstrate
+agreement efficiency on different communication layers when using different
+types of cryptography.
+}

@@ -1,0 +1,120 @@
+\chapter{Uvod}
+
+Sigurna komunikacija je vrlo važan dio današnjeg računalnog svijeta i Interneta
+uopće. Ona se ostvaruje korištenjem kriptografije, odnosno kriptografskih
+algoritama i ključeva, za ostvarivanje osnovnih sigurnosnih zahtjeva
+tajnosti, cjelovitosti i dostupnosti. Za ostvarivanje sigurnosnih zahtjeva
+koriste se različite kombinacije kriptografskih algoritama. Primjerice, za
+računanje digitalnog potpisa potrebni su algoritam kriptografskog sažetka i
+algoritam asimetričnog kriptosustava uz potrebne ključeve.
+
+Trenutno postoji velika količina različitih algoritama iste namjene koji ostvaruju
+iste sigurnosne zahtjeve. Neprestano se razvijaju novi algoritmi i otkrivaju
+ranjivosti prethodno dizajniranih algoritama. Uz to, zbog povećanja računalne
+moći zahtjevi na veličinu kriptografskih ključeva neprestano rastu. Stoga je
+potrebno osigurati siguran dogovor kriptografskih algoritama i ključeva koji će
+se moći dinamički prilagođavati trenutnim uvjetima i zahtjevima za sigurnost
+komunikacije. Dinamički dogovor kriptografskih algoritama i ključeva definiran
+je u okviru pojma kriptografski prilagodljive komunikacije.
+
+Kriptografski prilagodljiva komunikacija predstavlja princip u kojem se
+inačice kriptografskih algoritama ne ugrađuju izravno u aplikacije i sustave,
+već se samo definira koja se vrsta algoritma želi koristiti. To omogućuje
+naknadnu promjenu inačice algoritma bez promjene aplikacije, odnosno sustava.
+Suvremeni protokoli za sigurnu komunikaciju, poput TLS-a, IPsec-a i SSH-a,
+koriste princip kriptografski prilagodljive komunikacije. Osnovni nedostatak tih
+protokola je njihova složenost koja značajno otežava jednostavno programsko
+ostvarenje i
+formalnu verifikaciju njihovog dizajna. S druge strane, ti protokoli se ne mogu
+koristiti na uređajima s ograničenim računalnim sposobnostima koji su sastavni
+dio novih okolina temeljenih na Internetu stvari. Dogovor algoritama i ključeva
+u tim protokolima nije moguće koristiti neovisno o protokolu i primijeniti na
+druge komunikacijske slojeve i primjene zbog velike razine integracije i
+povezanosti s komunikacijskim slojem i protokolom.
+
+Stoga je u doktorskoj disertaciji dizajniran i izveden protokol za sigurno
+dogovaranje
+kriptografski prilagodljive komunikacije koji je neovisan o komunikacijskom
+sloju i može se koristiti na uređajima ograničenih računalnih sposobnosti.
+Jednostavna arhitektura protokola omogućila je formalno modeliranje protokola i
+računalnu formalnu verifikaciju tog modela. Dodatno, jednostavnost arhitekture
+smanjuje vjerojatnost grešaka u programskom ostvarenju i omogućava lakše održavanje
+sustava temeljenog na tom protokolu. Opisana je izravna primjena
+modeliranog protokola u okruženju Interneta stvari koja se temelji na prilagodbi
+odabira algoritma ovisno o trenutnim mogućnostima uređaja i potrebnoj razini
+sigurnosti. Uz disertaciju je izvedeno i programsko ostvarenje koje je ispitano u
+različitim komunikacijskim uvjetima u emuliranoj mrežnoj okolini u alatu
+IMUNES.
+
+U doktorskoj disertaciji ostvareni su sljedeći znanstveni doprinosi:
+\begin{enumerate}
+\item Protokol za sigurno dogovaranje kriptografskih algoritama neovisan o sloju
+protokolnog složaja, aplikaciji i operacijskom sustavu. 
+\item Metode za integraciju protokola u aplikacije koje koriste različite modele
+komunikacije, a posebice mreže ravnopravnih čvorova i model klijent-poslužitelj.
+\item Ocjena učinkovitosti protokola u simuliranom i stvarnom mrežnom okružju.
+\end{enumerate}
+
+Protokol je definiran u poglavlju \ref{ch:model} i formalno verificiran u
+poglavlju \ref{ch:verif}. Metode za integraciju protokola u okolinu Interneta
+stvari prikazane su u poglavlju \ref{ch:iot}, dok je arhitektura za integraciju
+protokola prikazana na početku poglavlja \ref{ch:impl}. U drugom dijelu
+poglavlja \ref{ch:impl} prikazana je ocjena učinkovitosti protokola na temelju
+mjerenja performansi protokola u različitim mrežnim uvjetima.
+
+U poglavlju \ref{ch:crypto} dan je pregled vrsta kriptografskih algoritama.
+Kriptografski algoritmi su podijeljeni u tri osnovne skupine: algoritmi za
+stvaranje kriptografskih sažetaka, simetrični kriptografski algoritmi i
+asimetrični kriptografski algoritmi.
+Kriptografski sažetak služi za zaštitu cjelovitosti podataka u
+digitalnim potpisima ili zaštitnim sumama. Algoritmi simetričnog
+kriptosustava služe osiguravanje tajnosti podataka, a algoritmi asimetričnog
+kriptosustava se koriste za dogovaranje i prijenos ključeva te digitalno
+potpisivanje podataka. Na kraju poglavlja obuhvaćeni su asimetrični algoritmi za sigurno
+dogovaranje zajedničke tajne koji su temelj protokola opisanog u disertaciji.
+
+Poglavlje \ref{ch:agility} sadrži opis trenutno korištenih protokola za sigurnu
+komunikaciju koji koriste principe prilagodljive komunikacije, na kojima je
+temeljen predloženi protokol za sigurno dogovaranje kriptografski prilagodljive
+komunikacije (engl. \emph{Agile Cryptographic Agreement Protocol} - ACAP).
+Opisani su dijelovi tih protokola i objašnjena je njihova
+interna arhitektura. Na kraju poglavlja opisani su novi protokoli za sigurnu
+komunikaciju koji se temelje na jednostavnijoj arhitekturi za postizanje
+sigurne komunikacije u različitim okruženjima.
+
+\nomenclature{ACAP}{\emph{Agile Cryptographic Agreement Protocol}}
+
+Poglavlje \ref{ch:model} sadrži opis protokola ACAP koji služi za siguran
+dogovor kriptografskih algoritama i ključeva za osiguravanje buduće
+komunikacije. Prikazane su sve poruke u protokolu i opisana je njihova razmjena
+uz pregled kriptografskih operacija potrebnih za siguran dogovor. Analiziran je
+algoritam dogovora kriptografskih algoritama uz pregled sigurnosnih mehanizama
+ugrađenih u protokol.
+
+U poglavlju \ref{ch:verif} opisan je jezik SPDL (engl. \emph{Security Protocol
+Definition Language}) koji je korišten za
+definiranje i verifikaciju formalnog modela protokola ACAP na jednostavnom
+primjeru. Potom je opisan model protokola i sigurnosnih zahtjeva koji se
+automatski verificiraju korištenjem alata Scyther. Na kraju poglavlja prikazani su
+rezultati verifikacije uz analizu zahtjevnosti postupka verifikacije.
+
+Primjena protokola ACAP u okolini Interneta stvari prikazana je u poglavlju
+\ref{ch:iot}. Na početku poglavlja opisana je arhitektura okoline Interneta
+stvari i prepoznate su ključne primjene protokola na komunikaciju u toj
+okolini. Potom je dan formalan model sigurne komunikacije koji predstavlja
+minimalan skup objekata i operacija potrebnih za sigurnu komunikaciju, a
+temeljen na dogovoru algoritama i ključeva kroz protokol ACAP. Na kraju
+poglavlja prikazana je prilagodljiva procedura za odabir algoritama koja uzima
+u obzir trenutne mogućnosti uređaja i željenu razinu sigurnosti za usporedbu
+algoritama.
+
+Poglavlje \ref{ch:impl} opisuje mogućnosti programskog ostvarenja
+dizajniranog protokola ACAP na različitim komunikacijskim slojevima
+koji uključuju protokole TCP, UDP, IP i Ethernet. Potom je dan pregled mjerenja
+učinkovitosti protokola u sklopu emulirane mrežne okoline alata IMUNES. Mjerenja
+demonstriraju nisku razinu zahtjevnosti protokola na mrežnu propusnost i
+analiziraju složenost kriptografskih operacija uključenih u dogovor. Na kraju je
+dan pregled ostvarenih sigurnosnih mehanizama koji su definirani u opisu
+protokola ACAP.
+
+% vim: spell spelllang=hr

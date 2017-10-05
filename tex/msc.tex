@@ -1,0 +1,43 @@
+\begin{figure}[ht]
+\setlength{\instdist}{2.5cm}
+\begin{centering}
+\begin{msc}[c]{Protokol ACAP}
+\declinst{c}{}{Klijent (I)}
+\declinst{s}{}{Poslužitelj (R)}
+
+\action*{generiranje $g^i,N_I$}{c}
+\nextlevel[2]
+
+\mess{\initi}{c}{s}
+\mscmark[br]{$g^i,N_I$}{s}
+\nextlevel[2]
+\action*{generiranje $g^r,N_R$}{s}
+\nextlevel[2]
+
+\action*{$K=KDF(g^{ir},N_I,N_R)$}{s}
+\nextlevel[3]
+
+\mess{\initr}{s}{c}
+\mscmark[bl]{$g^r,N_R,PK_R$}{c}
+\nextlevel[2]
+
+\action*{$K=KDF(g^{ri},N_I,N_R)$}{c}
+\nextlevel[3]
+
+\mess{\listi}{c}{s}
+\mscmark[br]{$PK_I,L_I$ $$}{s}
+\nextlevel[2]
+
+\mess{\listr}{s}{c}
+\mscmark[bl]{$L_R$}{c}
+\nextlevel[2]
+
+\referencestart{p}{\\$L_{IR},PK_I,PK_R,K_{IR}$}{c}{s}
+\nextlevel[3]
+\referenceend{p}
+
+\end{msc}
+\caption{Grafički prikaz razmjene poruka protokola ACAP}
+\label{msc}
+\end{centering}
+\end{figure}
